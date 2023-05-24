@@ -1,0 +1,65 @@
+---
+- name: Create StorageClass, PV and PVC for customer/namespace
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: yes
+
+  vars:
+    pv_name: "{{ pv | default(omit) }}"
+    pvc_name: "{{ pvc | default(omit) }}"
+    storage_class: "{{ storageclass | default(omit) }}"
+    namespace: "{{ namespace | default(omit) }}"
+    capacity: "{{ capacity | default(omit) }}"
+
+  tasks:
+    - name: Create Storage Class YAML
+      when:
+        - namespace is defined
+        - storageclass is defined
+      template:
+        src: storage-template.yaml.j2
+        dest: storageclass.yaml
+
+    - name: Run Storage command using Kubectl
+      when:
+        - storageclass is defined
+        - namespace is defined
+      ansible.builtin.shell: "kubectl apply -f storageclass.yaml"
+#      command: kubectl apply -f storageclass.yaml
+
+    - name: Create PV YAML
+      when:
+        - storagename is defined
+        - namespace is defined
+        - pv is defined
+        - capacity is defined
+      template:
+        src: pv-template.yaml.j2
+        dest: pv.yaml
+
+    - name: Run PV command using Kubectl
+      when:
+        - storagename is defined
+        - namespace is defined
+        - pv is defined
+        - capacity is defined
+      ansible.builtin.shell: "kubectl apply -f pv.yaml"
+
+    - name: Create PVC YAML
+      when:
+        - storagename is defined
+        - namespace is defined
+        - pvc is defined
+        - capacity is defined
+      template:
+        src: pvc-template.yaml.j2
+        dest: pvc.yaml
+
+    - name: Run PVC command using Kubectl
+      when:
+        - storagename is defined
+        - namespace is defined
+        - pv is defined
+        - capacity is defined
+      ansible.builtin.shell: "kubectl apply -f pvc.yaml"
